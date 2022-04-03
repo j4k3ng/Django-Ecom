@@ -1,9 +1,17 @@
 <html>
-  <body>
-    {% if name %}
-    <h1>Hello {{ name }}</h1>
-    {% else %}
-    <h1>Hello World</h1>
-    {% endif %}
-  </body>
+
+<body>
+  {% if name %}
+  <h1>Hello {{ name }}</h1>
+  {% else %}
+  <h1>Hello World</h1>
+  {% endif %}
+
+  <ul>
+    {% for order in orders %}
+    <li>The customer {{customer_name}} order: {{order.id}}</li>
+    {% endfor %}
+  </ul>
+</body>
+
 </html>
