@@ -7,11 +7,16 @@
   <h1>Hello World</h1>
   {% endif %}
 
-  <ul>
-    {% for order in orders %}
-    <li>The customer {{customer_name}} order: {{order.id}}</li>
+  <!-- <ul>
+    {% for value in values %}
+    <li>{{value.placed_at}} - {{value.customer.first_name}}</li>
+    <ol>
+      {% for name in value.orderitem_set.all %}
+      <li>{{name.product.title}}</li>
+      {% endfor %}
+    </ol>
     {% endfor %}
-  </ul>
+  </ul> -->
 </body>
 
 </html>
