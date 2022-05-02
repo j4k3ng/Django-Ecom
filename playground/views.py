@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
 from store.models import Product
 from store.models import Customer
 from store.models import Collection
@@ -50,5 +51,19 @@ def say_hello(request):
 
     # Example of deleting a collection
     # Collection.objects.filter(title='Video Games').delete()
+
+    # Example of a transaction, use it when you want to run all of the block and
+    # do not risk of creating an order without an order item if order items fails
+    # with transaction.atomic():
+    #     order = Order()
+    #     order.customer_id = 1
+    #     order.save()
+
+    #     item = OrderItem()
+    #     item.order = order
+    #     item.product_id = 1
+    #     item.quantity = 1
+    #     item .unit_price = 10
+    #     item.save()
 
     return render(request, 'hello.html', {'name': 'Mosh'})
