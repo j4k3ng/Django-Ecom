@@ -27,8 +27,8 @@ class Product(models.Model):
     last_update = models.DateTimeField(auto_now=True)
     collection = models.ForeignKey(Collection, on_delete=models.PROTECT)
     promotions = models.ManyToManyField(Promotion)
-    
-    def __str__(self)->str:
+
+    def __str__(self) -> str:
         return self.title
 
     class Meta:
@@ -38,7 +38,7 @@ class Product(models.Model):
 class Customer(models.Model):
     MEMBERSHIP_BRONZE = 'B'
     MEMBERSHIP_SILVER = 'S'
-    MEMBERSHIP_GOLD = 'G'
+    MEMBERSHIP_GOLD = 'G'   
 
     MEMBERSHIP_CHOICES = [
         (MEMBERSHIP_BRONZE, 'Bronze'),
@@ -55,8 +55,10 @@ class Customer(models.Model):
 
     def __str__(self):
         return (self.first_name + " " + self.last_name)
+
     class Meta:
         ordering = ['first_name', 'last_name']
+
 
 class Order(models.Model):
     PAYMENT_STATUS_PENDING = 'P'
@@ -76,9 +78,11 @@ class Order(models.Model):
     def __str__(self):
         return self.id
 
+
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.PROTECT)
-    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    product = models.ForeignKey(
+        Product, on_delete=models.PROTECT, related_name='orderitems')
     quantity = models.PositiveSmallIntegerField()
     unit_price = models.DecimalField(max_digits=6, decimal_places=2)
 
@@ -98,3 +102,15 @@ class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveSmallIntegerField()
+
+from django.core.validators import MaxValueValidator, MinValueValidator
+class Review(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
+    description = models.TextField()
+    date = models.DateField(auto_now_add=True) 
+    stars = models.IntegerField(
+        default=1,
+        validators=[MaxValueValidator(5), MinValueValidator(1)]
+    ) 
+
