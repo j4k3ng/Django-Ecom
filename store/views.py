@@ -139,12 +139,14 @@ from rest_framework.viewsets import ModelViewSet
 
 ### NOW I COMBINE ProductList and ProductDetail usinga  ViewSet 
 class ProductViewSet(ModelViewSet):
-    def get_queryset(self):
+
+    def get_queryset(self): # this method is used to query the product url with a collection_id in order to show all the products in that collection
         queryset = Product.objects.all()
-        collection_id = self.request.query_params.get('collection_id')
-        if collection_id is not None:
+        collection_id = self.request.query_params.get('collection_id') # the collection is taken from the query_params dictionary in the request object. I use get() instead of [] just because if you dont provide a collection_id query you will get an error using [] instead get return none
+        if collection_id is not None:  # if a query with collection_id is provided filter all the product based on the queryset otherwise return all the products
             queryset = queryset.filter(collection_id = collection_id)
-        return queryset
+        else:
+            return queryset
         
     def get_serializer_class(self):
         return ProductSerializer
@@ -152,7 +154,7 @@ class ProductViewSet(ModelViewSet):
     def get_serializer_context(self):
         return {'request': self.request}   
 
-    def destroy(self, request, pk, *args, **kwargs):
+    def destroy(self, request, pk, *args, **kwargs): # I use destroy instead of delete because otherwise the delete button will appear also in the product list instead of only on the proudct detail page
         product = get_object_or_404(Product, pk=pk)
         if product.orderitems.count() > 0:
             return Response({'error': 'product cannot be deleted because it is associated with an order item'},
@@ -256,7 +258,7 @@ class CollectionViewSet(ModelViewSet):
     def get_serializer_class(self):
         return CollectionSerializer
     
-    def destroy(self, request, pk, *args, **kwargs):
+    def destroy(self, request, pk, *args, **kwargs):# I use destroy instead of delete because otherwise the delete button will appear also in the collection list instead of only on the collection detail page
         collection = get_object_or_404(queryset, pk=pk)
         if Product.objects.filter(collection=collection).count() > 0:
             return Response({'error': 'collection cannot be deleted because it has associated products'},
@@ -301,7 +303,7 @@ class ReviewViewSet(ModelViewSet):
 #   serializer_class = ReviewSerializer
 
     def get_queryset(self):
-        return Review.objects.select_related('customer').filter(product_id=self.kwargs['product_pk'])
+        return Review.objects.select_related('customer').filter(product_id=self.kwargs['product_pk']) # I need to specify the product_id when taking the reviews from a product otherwise all the reviews of all products will be shown for each product review page
 
     def get_serializer_class(self):
         return ReviewSerializer 

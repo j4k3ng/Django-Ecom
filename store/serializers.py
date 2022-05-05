@@ -56,6 +56,9 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = ['id', 'customer', 'description', 'date', 'stars']
         # depth = 1
     
+    # def get_customer(self, obj):
+    #     return obj.customer.first_name
+    #customer_name= serializers.ReadOnlyField(source='customer.first_name')
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data['customer'] = Customer.objects.filter(id=data['customer']).get().first_name
@@ -65,6 +68,3 @@ class ReviewSerializer(serializers.ModelSerializer):
         product_id = self.context['product_id']
         return Review.objects.create(product_id=product_id, **validated_data) # when creating a new review the product_id is taken from the url and all the other data are taken form validated_data
 
-    # def get_customer(self, obj):
-    #     return obj.customer.first_name
-    #customer_name= serializers.ReadOnlyField(source='customer.first_name')
