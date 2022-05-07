@@ -5,15 +5,22 @@ from rest_framework.response import Response
 from .models import Product
 from .models import Collection
 from .models import Review
+from .models import Cart
+from .models import CartItem
 from .serializers import ProductSerializer
 from .serializers import CollectionSerializer
 from .serializers import ReviewSerializer
+from .serializers import CartSerializer
+from .serializers import CartItemSerializer
+from .serializers import AddCartItemSerialier
+from .serializers import UpdateCartItemSerialier
 from rest_framework import status
 from django.db.models import Count
 
 from rest_framework.views import APIView
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, DestroyModelMixin
 # Create your views here.
 
 # THERE ARE 4 TYPES OF VIEWS:
@@ -310,3 +317,32 @@ class ReviewViewSet(ModelViewSet):
 
     def get_serializer_context(self):   # taking the product_id from the url and passing to the context in order to provide it to the serializer
         return {'product_id': self.kwargs['product_pk']}    # the product_id is hidden in the kwargs dictionary in the 'product_pk' name. This name is taken from the name of the lookup value in the nested url which is 'product' which became 'product_id'
+
+
+## CREATE A CREATING CART VIEW
+class CartViewSet(CreateModelMixin,
+                 RetrieveModelMixin, 
+                 DestroyModelMixin, 
+                 GenericViewSet): # cannot use ModelViewSet because I cant provide the get function for this view, otherwise I will get back all the carts when calling /carts url
+    def get_queryset(self):
+        return Cart.objects.prefetch_related('items__product').all()
+
+    def get_serializer_class(self):
+        return CartSerializer 
+
+## CREATE 
+class CartItemViewSet(ModelViewSet):
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    def get_queryset(self):
+        return CartItem.objects.select_related('product').filter(cart_id=self.kwargs['cart_pk'])
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return CartItemSerializer 
+        elif self.request.method == "PATCH":
+            return UpdateCartItemSerialier
+        elif self.request.method == "POST":
+            return AddCartItemSerialier
+            
+    def get_serializer_context(self): 
+        return {'cart_id': self.kwargs['cart_pk']}   

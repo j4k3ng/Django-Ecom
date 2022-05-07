@@ -9,10 +9,15 @@ router = routers.DefaultRouter()
 router.register('products', views.ProductViewSet, basename='products')
 router.register('collections', views.CollectionViewSet, basename='collections')
 # router.register('reviews', views.ReviewViewSet, basename='reviews')
+router.register('carts', views.CartViewSet, basename='cart')
 
 
 products_router = routers.NestedDefaultRouter(router, 'products', lookup='product')
 products_router.register('reviews', views.ReviewViewSet, basename='product-reviews')
+
+carts_router = routers.NestedDefaultRouter(router, 'carts', lookup='cart')
+carts_router.register('items', views.CartItemViewSet, basename='cart-items')
+
 pprint(router.urls)
 
 
@@ -30,4 +35,5 @@ urlpatterns = [
     # path('reviews/<int:pk>', views.ReviewDetail.as_view()) # class based view
     path('', include(router.urls)), # routing a ViewSet
     path('', include(products_router.urls)), 
+    path('', include(carts_router.urls)), 
 ]
