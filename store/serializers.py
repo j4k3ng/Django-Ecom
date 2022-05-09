@@ -131,3 +131,11 @@ class UpdateCartItemSerialier(serializers.ModelSerializer): # serializer used wh
         fields = ['quantity']
 
     
+# I add a customer serializer here just to create a customer just after a new user is created
+# NB: I cannot permit that the Customer data are fulfilled in the same call with the User data (email,fist_name,last_name) because those fields are fulfilled in the core app serializer and I cannot mixup the things.
+# So basically the core serializer has the duty of just using the User data to login.
+# So in the front end what we will do is that we will make 2 calls: the first one with just the User data to login and then the second one to fulfill the Customer data (birt_date ecc..). Everything will be in the same front end form but with 2 different API calls
+class CustomerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Customer 
+        field = ['id', 'user_id', 'phone', 'birth_date', 'membership']

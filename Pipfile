@@ -9,6 +9,8 @@ django-debug-toolbar = "*"
 mysqlclient = "*"
 djangorestframework = "*"
 drf-nested-routers = "*"
+djoser = "*"
+djangorestframework-simplejwt = "*"
 
 [dev-packages]
 autopep8 = "*"
