@@ -66,10 +66,12 @@ admin.site.register(models.Order, OrderAdmin)
 
 
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ['first_name', 'last_name', 'membership', 'orders_count']
+    list_display = ['first_name',
+                    'last_name', 'membership', 'orders_count']
     list_editable = ['membership']
     list_per_page = 10
-    ordering = ['first_name', 'last_name']
+    list_select_related = ['user']
+    ordering = ['user__first_name', 'user__last_name']
     search_fields = ['first_name__istartswith', 'last_name__istartswith']
 
     @admin.display(ordering='orders_count')
@@ -78,7 +80,7 @@ class CustomerAdmin(admin.ModelAdmin):
             reverse('admin:store_order_changelist')
             + '?'
             + urlencode({
-                'customer__id': customer.id
+                'customer__id': customer.pk
             }))
         return format_html('<a href="{}">{}</a>', url, customer.orders_count)
 

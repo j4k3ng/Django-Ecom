@@ -319,10 +319,10 @@ class ReviewViewSet(ModelViewSet):
         return {'product_id': self.kwargs['product_pk']}    # the product_id is hidden in the kwargs dictionary in the 'product_pk' name. This name is taken from the name of the lookup value in the nested url which is 'product' which became 'product_id'
 
 
-## CREATE A CREATING CART VIEW
-class CartViewSet(CreateModelMixin,
-                 RetrieveModelMixin, 
-                 DestroyModelMixin, 
+## CREATING CART VIEW 
+class CartViewSet(CreateModelMixin, # Create a cart just simply posting an empty object
+                 RetrieveModelMixin, # I use retrive because I dont want to show all the carts when calling /carts. So using retreive I can get a specific cart /carts/UUID
+                 DestroyModelMixin, # Destroy a cart from its UUID. /carts/UUID
                  GenericViewSet): # cannot use ModelViewSet because I cant provide the get function for this view, otherwise I will get back all the carts when calling /carts url
     def get_queryset(self):
         return Cart.objects.prefetch_related('items__product').all()
@@ -330,13 +330,13 @@ class CartViewSet(CreateModelMixin,
     def get_serializer_class(self):
         return CartSerializer 
 
-## CREATE 
+## CREATING A ITEM VIEW INSIDE CART URL TO MODIFY AND SEE IN DETAILS THE ITEMS IN THE CART /carts/items/(item number in the cart)
 class CartItemViewSet(ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     def get_queryset(self):
         return CartItem.objects.select_related('product').filter(cart_id=self.kwargs['cart_pk'])
 
-    def get_serializer_class(self):
+    def get_serializer_class(self): # I use different serializer based on the what I need to do in the page
         if self.request.method == "GET":
             return CartItemSerializer 
         elif self.request.method == "PATCH":

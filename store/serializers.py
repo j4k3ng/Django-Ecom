@@ -70,12 +70,12 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 
-class SimpleProductSerializer(serializers.ModelSerializer):
+class SimpleProductSerializer(serializers.ModelSerializer): # I create another serializer for Products with only title and unit_price to use it in the CartItemSerializer
     class Meta:
         model = Product
         fields = ['pk', 'title', 'unit_price']
 
-class CartItemSerializer(serializers.ModelSerializer):
+class CartItemSerializer(serializers.ModelSerializer):  # The serializer used when getting cart 'GET' request on CartItem view
     product = SimpleProductSerializer()
     total_price = serializers.SerializerMethodField(read_only=True)
     class Meta:
@@ -86,7 +86,7 @@ class CartItemSerializer(serializers.ModelSerializer):
         return cart_item.quantity * cart_item.product.unit_price
 
 
-class CartSerializer(serializers.ModelSerializer):
+class CartSerializer(serializers.ModelSerializer):  # The serializer used when working with /carts
     id = serializers.UUIDField(read_only=True)  
     items = CartItemSerializer(many=True, read_only=True)
     total_cart = serializers.SerializerMethodField()
@@ -99,33 +99,33 @@ class CartSerializer(serializers.ModelSerializer):
         return sum([item.quantity * item.product.unit_price for item in cart.items.all()])
 
 
-class AddCartItemSerialier(serializers.ModelSerializer):
+class AddCartItemSerialier(serializers.ModelSerializer): # the serializer used when POST into CartItem view.
     class Meta:
         model = CartItem
         fields = ['id', 'product_id', 'quantity']
 
     product_id = serializers.IntegerField()
 
-    def validate_product_id(self, value):
+    def validate_product_id(self, value): # used to avoid putting negative number in the product_id. Like add product_id = -1 which doesnt exist
         if not Product.objects.filter(pk=value).exists():
             raise serializers.ValidationError("No product with this id")
         return value
 
-    def save(self, **kwargs):
+    def save(self, **kwargs):   # I need to overrite the save method to avoid getting the same product 2 times in the cart. In fact oppositely I need to add a quantity into existing product
         cart_id = self.context['cart_id']
         product_id = self.validated_data['product_id']
         quantity = self.validated_data['quantity']
-        try:
+        try: # if the product is already in the cart just change the quantity and save
             cart_item = CartItem.objects.get(cart_id=cart_id, product_id=product_id)
             cart_item.quantity += quantity
             cart_item.save()
             self.instance = cart_item
-        except CartItem.DoesNotExist:
+        except CartItem.DoesNotExist: # create a brand new product in the Cart if there is not
             self.instance = CartItem.objects.create(cart_id=cart_id, product_id=product_id, quantity=quantity)
         
         return self.instance
 
-class UpdateCartItemSerialier(serializers.ModelSerializer):
+class UpdateCartItemSerialier(serializers.ModelSerializer): # serializer used when PATCH into the cartitem view. Basically i can only change the quantity
     class Meta:
         model = CartItem
         fields = ['quantity']

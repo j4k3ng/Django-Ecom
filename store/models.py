@@ -1,4 +1,8 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
+from uuid import uuid4
 from django.db import models
+from django.contrib.auth.models import User
+
 
 
 class Promotion(models.Model):
@@ -34,30 +38,45 @@ class Product(models.Model):
     class Meta:
         ordering = ['title']
 
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+@receiver(post_save, sender=User)
+def create_customer(sender, instance, created, **kwargs):
+    if created:
+        Customer.objects.create(user=instance)
 
 class Customer(models.Model):
     MEMBERSHIP_BRONZE = 'B'
     MEMBERSHIP_SILVER = 'S'
-    MEMBERSHIP_GOLD = 'G'   
+    MEMBERSHIP_GOLD = 'G'
 
     MEMBERSHIP_CHOICES = [
         (MEMBERSHIP_BRONZE, 'Bronze'),
         (MEMBERSHIP_SILVER, 'Silver'),
         (MEMBERSHIP_GOLD, 'Gold'),
     ]
-    first_name = models.CharField(max_length=255)
-    last_name = models.CharField(max_length=255)
-    email = models.EmailField(unique=True)
+    user = models.OneToOneField(
+        User, primary_key=True, on_delete=models.CASCADE)
+    # first_name = models.CharField(max_length=255)
+    # last_name = models.CharField(max_length=255)
+    # email = models.EmailField(unique=True)
     phone = models.CharField(max_length=255)
     birth_date = models.DateField(null=True)
     membership = models.CharField(
         max_length=1, choices=MEMBERSHIP_CHOICES, default=MEMBERSHIP_BRONZE)
 
     def __str__(self):
-        return (self.first_name + " " + self.last_name)
+        return (self.user.first_name + " " + self.user.last_name)
+
+    def first_name(self):
+        return self.user.first_name
+
+    def last_name(self):
+        return self.user.last_name
 
     class Meta:
-        ordering = ['first_name', 'last_name']
+        ordering = ['user__first_name', 'user__last_name']
+
 
 
 class Order(models.Model):
@@ -93,28 +112,30 @@ class Address(models.Model):
     customer = models.ForeignKey(
         Customer, on_delete=models.CASCADE)
 
-from uuid import uuid4
+
 class Cart(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4)
     created_at = models.DateTimeField(auto_now_add=True)
 
 
 class CartItem(models.Model):
-    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
+    cart = models.ForeignKey(
+        Cart, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveSmallIntegerField()
 
     class Meta:
+        # this constrain is used to avoid putting the same product mroe than once in the same cart
         unique_together = [['cart', 'product']]
 
-from django.core.validators import MaxValueValidator, MinValueValidator
+
 class Review(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
+    # in questo modo cancello la review quando elimino il customer
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     description = models.TextField()
-    date = models.DateField(auto_now_add=True) 
+    date = models.DateField(auto_now_add=True)
     stars = models.IntegerField(
         default=1,
         validators=[MaxValueValidator(5), MinValueValidator(1)]
-    ) 
-
+    )
