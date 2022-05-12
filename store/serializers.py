@@ -1,5 +1,6 @@
+from django.db import transaction # I use this to avoid doing only one of the operation in save in case the light turn off
 from rest_framework import serializers
-from store.models import Product, Collection, Review, Customer, Cart, CartItem
+from store.models import Product, Collection, Review, Customer, Cart, CartItem, Order, OrderItem
 from decimal import Decimal
 from pprint import pprint
 
@@ -136,6 +137,51 @@ class UpdateCartItemSerialier(serializers.ModelSerializer): # serializer used wh
 # So basically the core serializer has the duty of just using the User data to login.
 # So in the front end what we will do is that we will make 2 calls: the first one with just the User data to login and then the second one to fulfill the Customer data (birt_date ecc..). Everything will be in the same front end form but with 2 different API calls
 class CustomerSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(read_only=True)
     class Meta:
         model = Customer 
-        field = ['id', 'user_id', 'phone', 'birth_date', 'membership']
+        fields = ['user_id', 'phone', 'birth_date', 'membership']
+
+
+# Create a OrderItem serializer to put into OrderSerializer
+class OrderItemSerializer(serializers.ModelSerializer):
+    product = SimpleProductSerializer() 
+    class Meta:
+        model = OrderItem
+        fields = ['id', 'product', 'quantity', 'unit_price']
+
+# Create a Order Serializer
+class OrderSerializer(serializers.ModelSerializer):  # The serializer used when working with /carts    
+    orderitem_set = OrderItemSerializer(many=True)
+    class Meta:
+        model = Order 
+        fields = ['id', 'placed_at', 'cart', 'orderitem_set']    
+
+# Use this serializer when POST a new order because the other one include items which it's not needed to create a new order. We just need cart_id and user_id. Basically I only put cart_id because user_id is taken from the request by the jwt token
+class CreateOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order 
+        fields = ['cart']
+
+
+    # I call this method save() instead of create() because I personally decide to call create when I only create something but this is not the case because here I'm saving,deleting,creating thigs
+    def save(self):
+        with transaction.atomic():
+            user_id = self.context['user_id']
+            cart_id = self.validated_data['cart'].id
+            order = Order.objects.create(customer_id=user_id, cart_id=cart_id)  #creating the order with the customer_id and cart_id
+            # Now I need to add all the products in the cart inside the OrderItem and then push the orderItems in the just created order
+            cart_items = CartItem.objects.select_related('product').filter(cart_id=cart_id)  # create the queryset withh all the items in the given cart
+            queryset = [    # here I create a list of all the orderitems
+                OrderItem(
+                    order=order,
+                    product=item.product,
+                    unit_price=item.product.unit_price,
+                    quantity=item.quantity
+                ) for item in cart_items
+            ]
+            OrderItem.objects.bulk_create(queryset) # Now i push all the queryset. So basically instead of doing OrderItem.objects.create() for all the items in the cart I just put everything in bulk in one time.
+
+            Cart.objects.filter(id=cart_id).delete()    # after the order is created I delete the cart
+
+            return order # I return the created order

@@ -49,8 +49,12 @@ class ProductAdmin(admin.ModelAdmin):
             return 'Low'
         return 'OK'
 
-    def collection_title(self, product):
-        return product.collection.title  # this works however for each product there will be a new query on the db for the colletion, to avoid this we need to preload the collection by using list_selected_related
+    def collection_title(self, product):  # this works however for each product there will be a new query on the db for the colletion, to avoid this we need to preload the collection by using list_selected_related
+        try: 
+            product.collection.title 
+            return product.colleciton.title
+        except: 
+            return None 
 
 
 admin.site.register(models.Product, ProductAdmin)

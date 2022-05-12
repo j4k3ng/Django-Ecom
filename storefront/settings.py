@@ -149,12 +149,16 @@ REST_FRAMEWORK = {
     ),
 }
 
+from datetime import timedelta
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1)
 }
 
+# I modify this to permit inserting other fields than the simple user and passw when creating a new user. Basically I use the CoreSerializer in the serializer app to do so but I need to modify the natural behaviour of the default user_create Djoser serializer first.
 DJOSER = {
-    'SERIALIZERS': {
+    'SERIALIZERS': {        
         'user_create': 'core.serializers.UserCreateSerializer',
+        'current_user': 'core.serializers.UserSerializer'
     }
 }
