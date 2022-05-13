@@ -421,7 +421,10 @@ class OrderViewSet(ModelViewSet):
         return {'user_id': self.request.user.id}   
 
     def get_permissions(self):  # I use this permission to avoid anonymous user to see the post button
-        return [IsAuthenticatedOrReadOnly()]
+        if self.request.method in ['PATCH', 'DELETE']:
+            return [IsAdminUser()]
+        else:
+            return [IsAuthenticatedOrReadOnly()]
 
     def list(self, request, *args, **kwargs):   # Only is_staff can list all orders, the others can only see their order
         if bool(request.user and request.user.is_staff):
@@ -444,10 +447,10 @@ class OrderViewSet(ModelViewSet):
         else:
             return Response("user not authorized to see this order", status=status.HTTP_401_UNAUTHORIZED)
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs): # basically here I create the new order in serializer.save() using the CreateOrderSerializer. But then to show the order data to the frontend I reponde with the OrderSerializer which contains all the order information. If i return the CreateOrderSerializer I would get only the cart_id back after creating the order with POST
         # if request.user.is_authenticated or request.user.is_staff:    # I dont need this line because I already have IsAuthenticated or Readonly
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        order = serializer.save()
-        serializer = OrderSerializer(order)
+        # order = serializer.save()
+        # serializer = OrderSerializer(order)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

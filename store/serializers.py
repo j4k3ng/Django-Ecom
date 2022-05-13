@@ -163,8 +163,13 @@ class CreateOrderSerializer(serializers.ModelSerializer):
         model = Order 
         fields = ['cart']
 
+    def validate_cart(self, cart):    # I define this method to avoid crating orders with empty cart or not existing cart_id
+        if not Cart.objects.filter(id=cart.id).exists():    # I actually dont need this method because is already automatically check in some other validators
+            raise serializers.ValidationError('No cart with this cart_id')
+        if CartItem.objects.filter(cart=cart.id).count() == 0:
+            raise serializers.ValidationError('You cannot create an empty cart')
 
-    # I call this method save() instead of create() because I personally decide to call create when I only create something but this is not the case because here I'm saving,deleting,creating thigs
+    # I create a new order and pass the cart itmes in the order. Then I delete the cart. 
     def save(self):
         with transaction.atomic():
             user_id = self.context['user_id']
